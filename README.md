@@ -12,13 +12,13 @@ Then you can simply call it.
 
 ```pascal
 var
-	url: String;
+  url: String;
 begin
-	url := TUrlParser.New
-				.BaseUrl('https://www.thisisatest.com/tests')
-				.AddParameter('thisisa', 'test')
-				.AddParameter('useiton', 'delphi')
-				.ToString;
+  url := TUrlParser.New
+           .BaseUrl('https://www.thisisatest.com/tests')
+	   .AddParameter('thisisa', 'test')
+	   .AddParameter('useiton', 'delphi')
+	   .ToString;
 end;
 ```
 
