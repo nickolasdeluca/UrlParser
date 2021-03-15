@@ -4,7 +4,8 @@ interface
 
 Uses
   { System }
-  System.StrUtils, System.Generics.Collections, System.Classes, System.SysUtils;
+  System.StrUtils, System.Generics.Collections, System.Classes,
+  System.SysUtils, System.NetEncoding;
 
 type
   TUrlParser = class
@@ -52,7 +53,7 @@ begin
   begin
     for AParam in FParams do
     begin
-      Result := Result + IfThen(Result.Contains('?'), '&', '?') + AParam;
+      Result := Result + IfThen(Result.Contains('?'), '&', '?') + TNetEncoding.URL.Encode(AParam, [], []);
     end;
   end;
   
