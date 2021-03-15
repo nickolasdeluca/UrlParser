@@ -10,6 +10,11 @@ Uses
 type
   TUrlParser = class
 
+  protected
+    {$IF CompilerVersion <= 23.0}
+    FNameValueSeparator: Char;
+    property NameValueSeparator: Char read FNameValueSeparator write FNameValueSeparator;
+    {$ENDIF}
   private
     FBaseUrl: String;
     FParams: TStringlist;
@@ -28,13 +33,20 @@ class function TUrlParser.New: TUrlParser;
 begin
   Result := TUrlParser.Create;
   Result.FBaseUrl := '';
+  {$IF CompilerVersion <= 23.0}
+  Result.FNameValueSeparator := '=';
+  {$ENDIF}
   Result.FParams := TStringlist.Create;
 end;
 
 function TUrlParser.AddParameter(AName: String; AValue: String): TUrlParser;
 begin
   Result := Self;
+  {$IF CompilerVersion > 23.0}
   Result.FParams.AddPair(AName, AValue);
+  {$ELSE}
+  Result.FParams.Add(AName + NameValueSeparator + AValue);
+  {$ENDIF}
 end;
 
 function TUrlParser.BaseUrl(AUrl: String): TUrlParser;
@@ -53,7 +65,12 @@ begin
   begin
     for AParam in FParams do
     begin
-      Result := Result + IfThen(Result.Contains('?'), '&', '?') + TNetEncoding.URL.Encode(AParam, [], []);
+      Result := Result + IfThen(Result.Contains('?'), '&', '?') +
+      {$IF CompilerVersion > 23.0}
+      TNetEncoding.URL.Encode(AParam, [], []);
+      {$ELSE}
+      TNetEncoding.URL.Encode(AParam);
+      {$ENDIF}
     end;
   end;
   
