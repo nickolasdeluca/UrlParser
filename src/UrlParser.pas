@@ -61,18 +61,15 @@ var
 begin
   Result := FBaseUrl;
 
-  if FParams.Count > 0 then
-  begin
-    for AParam in FParams do
-    begin
-      Result := Result + IfThen(Result.Contains('?'), '&', '?') +
-      {$IF CompilerVersion > 23.0}
-      TNetEncoding.URL.Encode(AParam, [], []);
-      {$ELSE}
-      TNetEncoding.URL.Encode(AParam);
-      {$ENDIF}
-    end;
-  end;
+  for AParam in FParams do
+    Result := Result + IfThen(Result.Contains('?'), '&', '?') + AParam;
+
+  Result :=
+  {$IF CompilerVersion > 23.0}
+  TNetEncoding.URL.Encode(Result, [], []);
+  {$ELSE}
+  TNetEncoding.URL.Encode(Result);
+  {$ENDIF}
   
   Self.Destroy;
 end;
