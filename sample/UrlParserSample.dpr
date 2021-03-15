@@ -2,7 +2,8 @@ program UrlParserSample;
 
 uses
   Vcl.Forms,
-  Main in 'Main.pas' {FMain};
+  Main in 'Main.pas' {FMain},
+  UrlParser in '..\src\UrlParser.pas';
 
 {$R *.res}
 
