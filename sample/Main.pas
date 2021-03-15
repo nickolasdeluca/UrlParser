@@ -33,10 +33,9 @@ begin
 
   mmUrl.Lines.Add(
     TUrlParser.New
-      .BaseUrl('www.test.com/t.html?a=1&b=3&c=m2-m3-m4-m5')
-      .AddParameter('a', '1')
-      .AddParameter('b', '3')
-      .AddParameter('c', 'm2-m3-m4-m5')
+      .BaseUrl('https://www.thisisatest.com/tests')
+      .AddParameter('thisisa', 'test')
+      .AddParameter('useiton', 'delphi')
       .ToString
   );
 end;
