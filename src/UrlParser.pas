@@ -70,7 +70,8 @@ begin
   {$ELSE}
   TNetEncoding.URL.Encode(Result);
   {$ENDIF}
-  
+
+  FParams.Free;
   Self.Destroy;
 end;
 
