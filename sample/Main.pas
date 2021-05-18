@@ -33,7 +33,10 @@ begin
 
   mmUrl.Lines.Add(
     TUrlParser.New
-      .BaseUrl('https://www.thisisatest.com/tests')
+      .SetProtocol(stHttps)
+      .BaseUrl('www.thisisatest.com')
+      .AddResource('tests')
+      .AddResource('subTests')
       .AddParameter('thisisa', 'test')
       .AddParameter('useiton', 'delphi')
       .ToString
