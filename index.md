@@ -15,7 +15,10 @@ var
   url: String;
 begin
   url := TUrlParser.New
-           .BaseUrl('https://www.thisisatest.com/tests')
+           .SetProtocol(stHttps)
+	   .BaseUrl('www.thisisatest.com')
+	   .AddResource('tests')
+	   .AddResource('subTests')
 	   .AddParameter('thisisa', 'test')
 	   .AddParameter('useiton', 'delphi')
 	   .ToString;
@@ -25,7 +28,7 @@ end;
 The sample above would return the url below as a string
 
 `
-https://www.thisisatest.com/tests?thisisa=test&useiton=delphi
+https://www.thisisatest.com/tests/subTests?thisisa=test&useiton=delphi
 `
 
 ### How to install it
