@@ -8,7 +8,7 @@ Uses
   System.SysUtils, System.NetEncoding;
 
 type
-  TProtocol = (stHttp, stHttps);
+  TProtocol = (stNone, stHttp, stHttps);
 
   TUrlParser = class
 
@@ -36,7 +36,7 @@ implementation
 { TSchemeType }
 
 const
-  cProtocol : array[TProtocol] of string = ('http://', 'https://');
+  cProtocol : array[TProtocol] of string = ('', 'http://', 'https://');
 
 { TUrlParser }
 
