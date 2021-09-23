@@ -15,13 +15,13 @@ var
   url: String;
 begin
   url := TUrlParser.Create
-				.Protocol(stHttps)
-				.BaseUrl('www.thisisatest.com')
-				.AddResource('tests')
-				.AddResource('subTests')
-				.AddParameter('thisisa', 'test')
-				.AddParameter('useiton', 'delphi')
-				.ToString);
+		.Protocol(stHttps)
+		.BaseUrl('www.thisisatest.com')
+		.AddResource('tests')
+		.AddResource('subTests')
+		.AddParameter('thisisa', 'test')
+		.AddParameter('useiton', 'delphi')
+		.ToString);
 end;
 ```
 
