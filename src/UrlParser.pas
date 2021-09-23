@@ -4,76 +4,218 @@ interface
 
 Uses
   { System }
-  System.StrUtils, System.Generics.Collections, System.Classes,
-  System.SysUtils, System.NetEncoding;
+  System.Generics.Collections, System.Classes,
+  System.SysUtils, System.NetEncoding, System.Math;
 
 type
-  TProtocol = (stNone, stHttp, stHttps);
+  TProtocol = (stInvalid = -1, stNone = 0, stHttp = 1, stHttps = 2);
 
-  TUrlParser = class
+  IUrlParser = interface
+    ['{992CD585-6821-433A-B1A5-B6E305A50844}']
+    function Parse(AURI: String): IUrlParser;
 
+    function Protocol(AProtocol: TProtocol): IUrlParser; overload;
+    function Protocol: TProtocol; overload;
+
+    function BaseUrl(AUrl: String): IUrlParser; overload;
+    function BaseUrl: String; overload;
+
+    function AddResource(AResource: String): IUrlParser;
+    function Resources: TList<String>;
+
+    function AddParameter(AName: String; AValue: String): IUrlParser; overload;
+    function AddParameter(APair: String): IUrlParser; overload;
+    function Parameters: TStringlist;
+
+    function ToString: String;
+  end;
+
+  TUrlParser = class(TInterfacedObject, IUrlParser)
   protected
     {$IF CompilerVersion <= 23.0}
     FNameValueSeparator: Char;
     property NameValueSeparator: Char read FNameValueSeparator write FNameValueSeparator;
     {$ENDIF}
   private
-    FBaseUrl: String;
-    FParams: TStringlist;
-    FResources: TList<String>;
     FProtocol: TProtocol;
+    FBaseURL: string;
+    FResources: TList<String>;
+    FParameters: TStringlist;
   public
-    class function New: TUrlParser;
-    function SetProtocol(AProtocol: TProtocol): TUrlParser;
-    function BaseUrl(AUrl: String): TUrlParser;
-    function AddParameter(AName: String; AValue: String): TUrlParser;
-    function AddResource(AResource: String): TUrlParser;
+    function Parse(AURI: String): IUrlParser;
+
+    function Protocol(AProtocol: TProtocol): IUrlParser; overload;
+    function Protocol: TProtocol; overload;
+
+    function BaseUrl(AUrl: String): IUrlParser; overload;
+    function BaseUrl: String; overload;
+
+    function AddResource(AResource: String): IUrlParser;
+    function Resources: TList<String>;
+
+    function AddParameter(AName: String; AValue: String): IUrlParser; overload;
+    function AddParameter(APair: String): IUrlParser; overload;
+    function Parameters: TStringlist;
+
     function ToString: String; override;
+
+    constructor Create;
+    destructor Destroy; override;
   end;
 
 implementation
 
-{ TSchemeType }
+uses
+  System.StrUtils;
 
 const
-  cProtocol : array[TProtocol] of string = ('', 'http://', 'https://');
+  cProtocol : array[TProtocol] of string = ('', '', 'http://', 'https://');
 
 { TUrlParser }
 
-class function TUrlParser.New: TUrlParser;
+constructor TUrlParser.Create;
 begin
-  Result := TUrlParser.Create;
-  Result.FBaseUrl := '';
+  FBaseUrl := '';
   {$IF CompilerVersion <= 23.0}
-  Result.FNameValueSeparator := '=';
+  FNameValueSeparator := '=';
   {$ENDIF}
-  Result.FParams := TStringlist.Create;
-  Result.FResources := TList<String>.Create;
+  FParameters := TStringlist.Create;
+  FResources := TList<String>.Create;
 end;
 
-function TUrlParser.SetProtocol(AProtocol: TProtocol): TUrlParser;
+destructor TUrlParser.Destroy;
 begin
-  Result := Self;
-  Result.FProtocol := AProtocol;
+  FResources.Free;
+  FParameters.Free;
+
+  inherited;
 end;
 
-function TUrlParser.AddParameter(AName: String; AValue: String): TUrlParser;
+function TUrlParser.Parameters: TStringlist;
+begin
+  Result := FParameters;
+end;
+
+function TUrlParser.Parse(AURI: String): IUrlParser;
+var
+  LFragment: String;
+  LURI: String;
+  LHasPaths, LHasParameters, LHasHashes: Boolean;
 begin
   Result := Self;
+
+  LURI := AURI.Trim(['/']);
+
+  if Length(LURI) <= 0 then
+    Exit;
+
+  LHasPaths := ContainsStr(LURI, '/');
+  LHasParameters := ContainsStr(LURI, '?');
+  LHasHashes := ContainsStr(LURI, '#');
+
+  LFragment := Copy(LURI, 0, Pos('://', LURI)+2);
+
+  FProtocol := TProtocol(IndexStr(LFragment, cProtocol)-1);
+
+  Delete(LURI, 1, Length(LFragment));
+
+  if Length(LURI) <= 0 then
+    Exit;
+
+  LFragment := Copy(LURI, 0, Pos('/', LURI)-1);
+
+  FBaseUrl := LFragment;
+
+  Delete(LURI, 1, Length(LFragment)+1);
+
+  if Length(LURI) <= 0 then
+    Exit;
+
+  if LHasPaths then
+  begin
+    while (Pos('/', LURI) > 0) do
+    begin
+      LFragment := Copy(LURI, 0, Pos('/', LURI)-1);
+
+      Result.Resources.Add(LFragment);
+
+      Delete(LURI, 1, Length(LFragment)+1);
+    end;
+
+    LFragment := Copy(LURI, 0, IfThen(LHasParameters,
+                                      Pos('?', LURI)-1,
+                                      Length(LURI)));
+
+    FResources.Add(LFragment);
+
+    Delete(LURI, 1, Length(LFragment));
+  end;
+
+  if Length(LURI) <= 0 then
+    Exit;
+
+  if LHasParameters then
+  begin
+    Delete(LURI, 1, 1);
+
+    while (Pos('&', LURI) > 0) do
+    begin
+      LFragment := Copy(LURI, 0, Pos('&', LURI)-1);
+
+      AddParameter(LFragment);
+
+      Delete(LURI, 1, Length(LFragment)+1);
+    end;
+
+    LFragment := Copy(LURI, 0, IfThen(LHasHashes,
+                                      Pos('#', LURI)-1,
+                                      Length(LURI)));
+
+    AddParameter(LFragment);
+
+    Delete(LURI, 1, Length(LFragment));
+  end;
+end;
+
+function TUrlParser.Protocol: TProtocol;
+begin
+  Result := FProtocol;
+end;
+
+function TUrlParser.Protocol(AProtocol: TProtocol): IUrlParser;
+begin
+  Result := Self;
+  FProtocol := AProtocol;
+end;
+
+function TUrlParser.AddParameter(AName: String; AValue: String): IUrlParser;
+begin
+  Result := Self;
+
   {$IF CompilerVersion > 23.0}
-  Result.FParams.AddPair(AName, AValue);
+  FParameters.AddPair(AName, AValue);
   {$ELSE}
-  Result.FParams.Add(AName + NameValueSeparator + AValue);
+  AddParameter(AName + NameValueSeparator + AValue);
   {$ENDIF}
 end;
 
-function TUrlParser.AddResource(AResource: String): TUrlParser;
+function TUrlParser.AddParameter(APair: String): IUrlParser;
 begin
-  Result := Self;
-  Result.FResources.Add(AResource);
+  FParameters.Add(APair);
 end;
 
-function TUrlParser.BaseUrl(AUrl: String): TUrlParser;
+function TUrlParser.AddResource(AResource: String): IUrlParser;
+begin
+  Result := Self;
+  Result.Resources.Add(AResource);
+end;
+
+function TUrlParser.BaseUrl: String;
+begin
+  Result := FBaseURL;
+end;
+
+function TUrlParser.BaseUrl(AUrl: String): IUrlParser;
 begin
   Result := Self;
   FBaseUrl := AUrl;
@@ -86,12 +228,12 @@ var
 begin
   Result := cProtocol[FProtocol];
 
-  Result := Result + FBaseUrl;
+  Result := Result + BaseUrl;
 
-  for AResource in FResources do
+  for AResource in Resources do
     Result := Result + '/' + AResource;
 
-  for AParam in FParams do
+  for AParam in FParameters do
     Result := Result + IfThen(Result.Contains('?'), '&', '?') + AParam;
 
   Result :=
@@ -100,10 +242,11 @@ begin
   {$ELSE}
   TNetEncoding.URL.Encode(Result);
   {$ENDIF}
+end;
 
-  FResources.Free;
-  FParams.Free;
-  Self.Destroy;
+function TUrlParser.Resources: TList<String>;
+begin
+  Result := FResources;
 end;
 
 end.
