@@ -64,7 +64,13 @@ begin
   mmParsedInfo.Lines.Add('');
 
   mmParsedInfo.Lines.Add('Protocol: ' + IntToStr(Integer(LUrlObject.Protocol)));
+
+  mmParsedInfo.Lines.Add('Username: ' + LUrlObject.Username);
+  mmParsedInfo.Lines.Add('Password: ' + LUrlObject.Password);
+
   mmParsedInfo.Lines.Add('BaseUrl: ' + LUrlObject.BaseUrl);
+
+  mmParsedInfo.Lines.Add('Port: ' + IntToStr(LUrlObject.Port));
 
   for LResource in LUrlObject.Resources do
     LResources := LResources + IfThen(LResources.IsEmpty, '', ', ') + LResource;

@@ -8,7 +8,12 @@ Uses
   System.SysUtils, System.NetEncoding, System.Math;
 
 type
-  TProtocol = (stInvalid = -1, stNone = 0, stHttp = 1, stHttps = 2);
+  TProtocol = (stNone, stHttp, stHttps);
+
+  TProtocolHelper = record Helper for TProtocol
+    function Parse(const AValue: string): TProtocol;
+    function ToString: string;
+  end;
 
   IUrlParser = interface
     ['{992CD585-6821-433A-B1A5-B6E305A50844}']
@@ -17,8 +22,17 @@ type
     function Protocol(AProtocol: TProtocol): IUrlParser; overload;
     function Protocol: TProtocol; overload;
 
+    function Username(AUsername: String): IUrlParser; overload;
+    function Username: string; overload;
+
+    function Password(APassword: String): IUrlParser; overload;
+    function Password: string; overload;
+
     function BaseUrl(AUrl: String): IUrlParser; overload;
     function BaseUrl: String; overload;
+
+    function Port(APort: Integer): IUrlParser; overload;
+    function Port: Integer; overload;
 
     function AddResource(AResource: String): IUrlParser;
     function Resources: TList<String>;
@@ -41,14 +55,26 @@ type
     FBaseURL: string;
     FResources: TList<String>;
     FParameters: TStringlist;
+    FUsername: string;
+    FPassword: string;
+    FPort: Integer;
   public
     function Parse(AURI: String): IUrlParser;
 
     function Protocol(AProtocol: TProtocol): IUrlParser; overload;
     function Protocol: TProtocol; overload;
 
+    function Username(AUsername: String): IUrlParser; overload;
+    function Username: string; overload;
+
+    function Password(APassword: String): IUrlParser; overload;
+    function Password: string; overload;
+
     function BaseUrl(AUrl: String): IUrlParser; overload;
     function BaseUrl: String; overload;
+
+    function Port(APort: Integer): IUrlParser; overload;
+    function Port: Integer; overload;
 
     function AddResource(AResource: String): IUrlParser;
     function Resources: TList<String>;
@@ -68,8 +94,39 @@ implementation
 uses
   System.StrUtils;
 
-const
-  cProtocol : array[TProtocol] of string = ('', '', 'http://', 'https://');
+{ TProtocolHelper }
+
+function TProtocolHelper.Parse(const AValue: string): TProtocol;
+var
+  I: Integer;
+begin
+  Result := TProtocol.stNone;
+
+  for I := Ord(Low(TProtocol)) to Ord(High(TProtocol)) do
+  begin
+    if AValue = TProtocol(I).ToString then
+    begin
+      Result := TProtocol(I);
+      Break
+    end;
+  end;
+
+  Self := Result;
+end;
+
+function TProtocolHelper.ToString: string;
+begin
+  case Self of
+    stNone:
+      Result := '';
+    stHttp:
+      Result := 'http://';
+    stHttps:
+      Result := 'https://';
+  else
+    Result := '';
+  end;
+end;
 
 { TUrlParser }
 
@@ -100,7 +157,7 @@ function TUrlParser.Parse(AURI: String): IUrlParser;
 var
   LFragment: String;
   LURI: String;
-  LHasPaths, LHasParameters, LHasHashes: Boolean;
+  LHasProtocol, LHasPaths, LHasParameters, LHasHashes, LHasUserPass, LHasPort: Boolean;
 begin
   Result := Self;
 
@@ -109,24 +166,62 @@ begin
   if Length(LURI) <= 0 then
     Exit;
 
+  LHasProtocol := ContainsStr(LURI, '://');
   LHasPaths := ContainsStr(LURI, '/');
   LHasParameters := ContainsStr(LURI, '?');
   LHasHashes := ContainsStr(LURI, '#');
+  LHasUserPass := ((ContainsStr(LURI, '@') and ContainsStr(LURI, ':')));
 
-  LFragment := Copy(LURI, 0, Pos('://', LURI)+2);
+  if LHasProtocol then
+  begin
+    LFragment := Copy(LURI, 0, Pos('://', LURI) + 2);
 
-  FProtocol := TProtocol(IndexStr(LFragment, cProtocol)-1);
+    FProtocol.Parse(LFragment);
 
-  Delete(LURI, 1, Length(LFragment));
+    Delete(LURI, 1, Length(LFragment));
+  end;
 
   if Length(LURI) <= 0 then
     Exit;
 
-  LFragment := Copy(LURI, 0, Pos('/', LURI)-1);
+  if (LHasUserPass) then
+  begin
+    while (Pos('@', LURI) > 0) do
+    begin
+      LFragment := Copy(LURI, 0, Pos('@', LURI) - 1);
+
+      if (ContainsStr(LFragment, ':')) then
+      begin
+        Result.Username(Copy(LFragment, 0, Pos(':', LFragment) - 1));
+        Result.Password(Copy(LFragment, Pos(':', LFragment) + 1, LFragment.Length));
+
+        Delete(LURI, 1, Length(LFragment) + 1);
+      end;
+    end;
+  end;
+
+  if Length(LURI) <= 0 then
+    Exit;
+
+  LHasPort := ContainsStr(LURI, ':');
+
+  LFragment := Copy(LURI, 0, Pos(IfThen(LHasPort, ':', '/'), LURI) - 1);
 
   FBaseUrl := LFragment;
 
-  Delete(LURI, 1, Length(LFragment)+1);
+  Delete(LURI, 1, Length(LFragment) + 1);
+
+  if Length(LURI) <= 0 then
+    Exit;
+
+  if (LHasPort) then
+  begin
+    LFragment := Copy(LURI, 0, Pos('/', LURI) - 1);
+
+    Result.Port(StrToIntDef(LFragment, 0));
+
+    Delete(LURI, 1, Length(LFragment) + 1);
+  end;
 
   if Length(LURI) <= 0 then
     Exit;
@@ -135,15 +230,15 @@ begin
   begin
     while (Pos('/', LURI) > 0) do
     begin
-      LFragment := Copy(LURI, 0, Pos('/', LURI)-1);
+      LFragment := Copy(LURI, 0, Pos('/', LURI) - 1);
 
       Result.Resources.Add(LFragment);
 
-      Delete(LURI, 1, Length(LFragment)+1);
+      Delete(LURI, 1, Length(LFragment) + 1);
     end;
 
     LFragment := Copy(LURI, 0, IfThen(LHasParameters,
-                                      Pos('?', LURI)-1,
+                                      Pos('?', LURI) - 1,
                                       Length(LURI)));
 
     FResources.Add(LFragment);
@@ -160,21 +255,54 @@ begin
 
     while (Pos('&', LURI) > 0) do
     begin
-      LFragment := Copy(LURI, 0, Pos('&', LURI)-1);
+      LFragment := Copy(LURI, 0, Pos('&', LURI) - 1);
 
       AddParameter(LFragment);
 
-      Delete(LURI, 1, Length(LFragment)+1);
+      Delete(LURI, 1, Length(LFragment) + 1);
     end;
 
     LFragment := Copy(LURI, 0, IfThen(LHasHashes,
-                                      Pos('#', LURI)-1,
+                                      Pos('#', LURI) - 1,
                                       Length(LURI)));
 
     AddParameter(LFragment);
 
     Delete(LURI, 1, Length(LFragment));
   end;
+end;
+
+function TUrlParser.Username(AUsername: String): IUrlParser;
+begin
+  Result := Self;
+  FUsername := AUsername;
+end;
+
+function TUrlParser.Username: string;
+begin
+  Result := FUsername;
+end;
+
+function TUrlParser.Password(APassword: String): IUrlParser;
+begin
+  Result := Self;
+  FPassword := APassword;
+end;
+
+function TUrlParser.Password: string;
+begin
+  Result := FPassword;
+end;
+
+function TUrlParser.Port(APort: Integer): IUrlParser;
+begin
+  Result := Self;
+  FPort := APort;
+end;
+
+function TUrlParser.Port: Integer;
+begin
+  Result := FPort;
 end;
 
 function TUrlParser.Protocol: TProtocol;
@@ -226,9 +354,15 @@ var
   AParam: String;
   AResource: String;
 begin
-  Result := cProtocol[FProtocol];
+  Result := Protocol.ToString;
+
+  if (not(Username.IsEmpty)) or (not(Password.IsEmpty)) then
+    Result := Result + Username + ':' + Password + '@';
 
   Result := Result + BaseUrl;
+
+  if (Port > 0) then
+    Result := Result + ':' + IntToStr(Port);
 
   for AResource in Resources do
     Result := Result + '/' + AResource;
