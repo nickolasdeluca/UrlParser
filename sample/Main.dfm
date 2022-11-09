@@ -25,10 +25,6 @@ object FMain: TFMain
     Caption = 'cpSamples'
     TabOrder = 0
     OnCardChange = cpSamplesCardChange
-    ExplicitLeft = 72
-    ExplicitTop = 8
-    ExplicitWidth = 300
-    ExplicitHeight = 200
     object cdTestToString: TCard
       Left = 0
       Top = 0
@@ -38,9 +34,6 @@ object FMain: TFMain
       Caption = 'cdTestToString'
       CardIndex = 0
       TabOrder = 0
-      ExplicitLeft = -7
-      ExplicitWidth = 445
-      ExplicitHeight = 274
       object btSampler: TButton
         AlignWithMargins = True
         Left = 5
@@ -55,9 +48,6 @@ object FMain: TFMain
         Caption = 'Test it!'
         TabOrder = 0
         OnClick = btSamplerClick
-        ExplicitLeft = 184
-        ExplicitTop = 168
-        ExplicitWidth = 75
       end
       object mmUrl: TMemo
         AlignWithMargins = True
@@ -72,10 +62,6 @@ object FMain: TFMain
         Align = alClient
         ReadOnly = True
         TabOrder = 1
-        ExplicitLeft = 8
-        ExplicitTop = 8
-        ExplicitWidth = 431
-        ExplicitHeight = 154
       end
     end
     object cdTestObjectCreation: TCard
@@ -160,8 +146,6 @@ object FMain: TFMain
     Font.Style = []
     ParentFont = False
     TabOrder = 1
-    ExplicitTop = 215
-    ExplicitWidth = 450
     object btNext: TSpeedButton
       AlignWithMargins = True
       Left = 466
