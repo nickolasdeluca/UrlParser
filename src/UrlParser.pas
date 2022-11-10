@@ -10,11 +10,6 @@ Uses
 type
   TProtocol = (stNone, stHttp, stHttps);
 
-  TProtocolHelper = record Helper for TProtocol
-    function Parse(const AValue: string): TProtocol;
-    function ToString: string;
-  end;
-
   IUrlParser = interface
     ['{992CD585-6821-433A-B1A5-B6E305A50844}']
     function Parse(AURI: String): IUrlParser;
@@ -93,6 +88,12 @@ implementation
 
 uses
   System.StrUtils;
+
+type
+  TProtocolHelper = record Helper for TProtocol
+    function Parse(const AValue: string): TProtocol;
+    function ToString: string;
+  end;
 
 { TProtocolHelper }
 
